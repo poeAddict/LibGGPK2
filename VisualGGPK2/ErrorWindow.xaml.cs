@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Windows;
 namespace VisualGGPK2
 {
@@ -9,45 +10,41 @@ namespace VisualGGPK2
             InitializeComponent();
         }
 
-        public void ShowError(object e)
+        public virtual void ShowError(Exception e)
         {
-            var ex = e as System.Exception;
-            var error = ex.ToString();
-            Dispatcher.Invoke(new System.Action(() => {
-                ErrorBox.Text = error;
-                ButtonCopy.IsEnabled = true;
-                ButtonResume.IsEnabled = true;
-                ButtonStop.IsEnabled = true;
-            }));
+            ErrorBox.Text = e.ToString();
+            ButtonCopy.IsEnabled = true;
+            ButtonResume.IsEnabled = true;
+            ButtonStop.IsEnabled = true;
         }
 
-        private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        protected virtual void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
         }
 
-        private void OnCopyClick(object sender, RoutedEventArgs e)
+        protected virtual void OnCopyClick(object sender, RoutedEventArgs e)
         {
             Clipboard.SetText(ErrorBox.Text);
         }
 
-        private void OnGitHubClick(object sender, RoutedEventArgs e)
+        protected virtual void OnGitHubClick(object sender, RoutedEventArgs e)
         {
             Process.Start("https://github.com/aianlinb/LibGGPK2");
         }
 
-        private void OnResumeClick(object sender, RoutedEventArgs e)
+        protected virtual void OnResumeClick(object sender, RoutedEventArgs e)
         {
             Closing -= OnClosing;
             DialogResult = true;
-            Close();
+            Close(); // This line will never reached
         }
 
-        private void OnStopClick(object sender, RoutedEventArgs e)
+        protected virtual void OnStopClick(object sender, RoutedEventArgs e)
         {
             Closing -= OnClosing;
             DialogResult = false;
-            Close();
+            Close(); // This line will never reached
         }
     }
 }

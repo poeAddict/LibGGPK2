@@ -16,7 +16,7 @@ namespace LibBundle
         public readonly HashSet<string> Paths = new HashSet<string>();
         public readonly byte[] directoryBundleData;
 
-        private static BinaryReader tmp;
+        protected static BinaryReader tmp;
         public IndexContainer(string path) : this(tmp = new BinaryReader(File.OpenRead(path)))
         {
             tmp.Close();
@@ -31,7 +31,7 @@ namespace LibBundle
 
             var bundleCount = databr.ReadInt32();
             Bundles = new BundleRecord[bundleCount];
-            for (int i = 0; i < bundleCount; i++)
+            for (var i = 0; i < bundleCount; i++)
                 Bundles[i] = new BundleRecord(databr) { bundleIndex = i };
 
             var fileCount = databr.ReadInt32();
@@ -57,7 +57,7 @@ namespace LibBundle
             databr.BaseStream.Seek(tmp, SeekOrigin.Begin);
 
             var directoryBundle = new BundleContainer(databr);
-            var br2 = new BinaryReader(directoryBundle.Read(databr));
+            var br2 = new BinaryReader(directoryBundle.Read(databr), Encoding.UTF8);
             // Array.Sort(Directorys, new Comparison<DirectoryRecord>((dr1, dr2) => { return dr1.Offset > dr2.Offset ? 1 : -1; }));
             foreach (var d in Directorys)
             {
@@ -166,7 +166,7 @@ namespace LibBundle
             return BundleContainer.Save(bw.BaseStream);
         }
 
-        public BundleRecord GetSmallestBundle(IList<BundleRecord> Bundles = null)
+        public virtual BundleRecord GetSmallestBundle(IList<BundleRecord> Bundles = null)
         {
             Bundles ??= this.Bundles;
             var result = Bundles.ElementAt(0);
@@ -183,15 +183,15 @@ namespace LibBundle
         public static ulong FNV1a64Hash(string str)
         {
             if (str.EndsWith('/'))
-                str = str.TrimEnd(new char[] { '/' }) + "++";
+                str = str.TrimEnd('/') + "++";
             else
                 str = str.ToLower() + "++";
 
             var bs = Encoding.UTF8.GetBytes(str);
-            var hash = 0xcbf29ce484222325L;
+            var hash = 0xCBF29CE484222325UL;
             foreach (var by in bs)
-                hash = (hash ^ by) * 0x100000001b3;
-            // Equal to: bs.Aggregate(0xcbf29ce484222325, (current, by) => (current ^ by) * 0x100000001b3);
+                hash = (hash ^ by) * 0x100000001B3UL;
+            // Equal to: bs.Aggregate(0xCBF29CE484222325UL, (current, by) => (current ^ by) * 0x100000001B3);
             return hash;
         }
     }

@@ -43,8 +43,7 @@ namespace LibGGPK2.Records
 
         internal override void Write(BinaryWriter bw = null)
         {
-            if (bw == null)
-                bw = ggpkContainer.Writer;
+            bw ??= ggpkContainer.Writer;
             Offset = bw.BaseStream.Position;
             bw.Write(Length);
             bw.Write(Tag);
@@ -56,7 +55,7 @@ namespace LibGGPK2.Records
         /// Remove this FreeRecord from the Linked FreeRecord List
         /// </summary>
         /// <param name="node">Node in <see cref="GGPKContainer.LinkedFreeRecords"/> to remove</param>
-        public void Remove(LinkedListNode<FreeRecord> node = null)
+        public virtual void Remove(LinkedListNode<FreeRecord> node = null)
         {
             node ??= ggpkContainer.LinkedFreeRecords.Find(this);
             var previous = node.Previous?.Value;

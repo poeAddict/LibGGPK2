@@ -16,7 +16,7 @@ namespace LibBundle.Records
         public int validSize;
         public readonly List<FileRecord> Files = new List<FileRecord>();
         internal readonly Dictionary<FileRecord, byte[]> FileToAdd = new Dictionary<FileRecord, byte[]>();
-        private BundleContainer _bundle;
+        protected BundleContainer _bundle;
 
         public BundleContainer Bundle
         {
@@ -35,7 +35,7 @@ namespace LibBundle.Records
             UncompressedSize = br.ReadInt32();
         }
 
-        public void Read(BinaryReader br = null, long? Offset = null)
+        public virtual void Read(BinaryReader br = null, long? Offset = null)
         {
             if (_bundle != null) return;
             if (Offset.HasValue)
@@ -53,10 +53,11 @@ namespace LibBundle.Records
             }
         }
 
-        public void Save(string newPath = null, string originalPath = null)
+        public virtual void Save(string newPath = null, string originalPath = null)
         {
             if (newPath == null && originalPath == null && Bundle.path == null)
-                throw new ArgumentNullException("Could not find path to read and save");
+#pragma warning disable CA2208 // 正確地將引數例外狀況具現化
+				throw new ArgumentNullException();
             var data = new MemoryStream();
             foreach (var d in FileToAdd)
             {
@@ -65,17 +66,17 @@ namespace LibBundle.Records
             }
             UncompressedSize = (int)data.Length + Bundle.uncompressed_size;
             FileToAdd.Clear();
-            if (newPath != null)
-                File.WriteAllBytes(newPath, Bundle.AppendAndSave(data, originalPath));
-            else if (originalPath != null)
-                File.WriteAllBytes(originalPath, Bundle.AppendAndSave(data, originalPath));
-            else
-                File.WriteAllBytes(Bundle.path, Bundle.AppendAndSave(data, originalPath));
+                if (newPath != null)
+                    File.WriteAllBytes(newPath, Bundle.AppendAndSave(data, originalPath));
+                else if (originalPath != null)
+                    File.WriteAllBytes(originalPath, Bundle.AppendAndSave(data, originalPath));
+                else
+                    File.WriteAllBytes(Bundle.path, Bundle.AppendAndSave(data, originalPath));
         }
 
-        public byte[] Save(BinaryReader br, long? Offset = null)
+        public virtual byte[] Save(BinaryReader br, long? Offset = null)
         {
-            if (Offset != null) Read(br, Offset);
+            Read(br, Offset);
             var data = new MemoryStream();
             foreach (var (f, b) in FileToAdd)
             {
@@ -85,14 +86,49 @@ namespace LibBundle.Records
             byte[] result;
             if (data.Length == 0)
             {
-                br.BaseStream.Seek(Bundle.offset, SeekOrigin.Begin);
-                result = br.ReadBytes(Bundle.head_size + Bundle.compressed_size + 12);
+                if (br == null) {
+                    result = File.ReadAllBytes(Bundle.path);
+                } else {
+                    br.BaseStream.Seek(Bundle.offset, SeekOrigin.Begin);
+                    result = br.ReadBytes(Bundle.head_size + Bundle.compressed_size + 12);
+                }
             }
             else
             {
                 UncompressedSize = (int)data.Length + Bundle.uncompressed_size;
-                result = Bundle.AppendAndSave(data, br.BaseStream);
+                result = Bundle.AppendAndSave(data, br?.BaseStream ?? Bundle.Read());
             }
+            FileToAdd.Clear();
+            data.Close();
+            return result;
+        }
+
+        public virtual void SaveWithRecompression(string newPath = null, string originalPath = null) {
+            if (newPath == null && originalPath == null && Bundle.path == null)
+                throw new ArgumentNullException();
+            var data = Bundle.Read(originalPath);
+            data.SetLength(validSize);
+            data.Position = validSize;
+            foreach (var d in FileToAdd) {
+                d.Key.Offset = (int)data.Position;
+                data.Write(d.Value, 0, d.Key.Size);
+            }
+            UncompressedSize = (int)data.Length;
+            FileToAdd.Clear();
+            Bundle.Save(data, newPath ?? originalPath);
+        }
+
+        public virtual byte[] SaveWithRecompression(BinaryReader br, long? Offset = null) {
+            Read(br, Offset);
+            var data = Bundle.Read(br);
+            data.SetLength(validSize);
+            data.Position = validSize;
+            foreach (var (f, b) in FileToAdd) {
+                f.Offset = (int)data.Position;
+                data.Write(b, 0, f.Size);
+            }
+            UncompressedSize = validSize = (int)data.Length;
+            var result = Bundle.Save(data);
             FileToAdd.Clear();
             data.Close();
             return result;

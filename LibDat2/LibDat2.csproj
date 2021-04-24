@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <Authors>aianlinb</Authors>
-    <Copyright>Copyright © 2020 aianlinb.</Copyright>
-    <AssemblyVersion>0.6.0.0</AssemblyVersion>
+    <Copyright>Copyright © 2020-2021 aianlinb.</Copyright>
+    <AssemblyVersion>0.11.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -19,7 +19,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Update="DatDefinitions.3.13.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="DatDefinitions.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="DatDefinitions_3.12.diff">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="DatDefinitions_3.12.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
